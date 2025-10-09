@@ -33,6 +33,9 @@ func ConvertToInt(data interface{}) int {
 		return int(data.(uint64))
 	case float64:
 		return int(data.(float64))
+	case []uint8:
+		n, _ := strconv.Atoi(string(data.([]uint8)))
+		return n
 	}
 }
 
