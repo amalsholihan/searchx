@@ -145,7 +145,7 @@ order by name ASC, id DESC
 Gunakan `.Paginate(page, limit, &result)` untuk melakukan paginasi otomatis, lengkap dengan total count.
 
 ```go
-result := map[string]any{}
+result := searchx.Paginated{}
 
 search_result := searchx.SetDB(*db).
     Paginate(1, 10, &result)
