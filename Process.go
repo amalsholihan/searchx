@@ -80,7 +80,7 @@ func (ks *Searchx) Paginate(page, per_page int, result *map[string]any) *Searchx
 	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Find(&data)
 
 	result_data := *result
-	result_data["total"] = ConvertToInt(total["agg"])
+	result_data["total"] = int(ConvertToFloat(total["agg"]))
 	result_data["data"] = data
 	result_data["page"] = page
 	result_data["per_page"] = per_page
