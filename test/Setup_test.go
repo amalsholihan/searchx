@@ -8,9 +8,10 @@ import (
 )
 
 type User struct {
-	ID   uint
-	Name string
-	Age  int
+	ID    uint
+	Name  string
+	Age   int
+	Sales float32
 }
 
 func (s User) TableName() string {
@@ -27,13 +28,16 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	}
 
 	// 🧪 1. Simpan data dummy
-	if err := db.Create(&User{Name: "Amal", Age: 27}).Error; err != nil {
+	if err := db.Create(&User{Name: "Amal", Age: 34, Sales: 100000}).Error; err != nil {
+		t.Fatalf("failed to insert record: %v", err)
+	}
+	if err := db.Create(&User{Name: "Annissa", Age: 32, Sales: 500000}).Error; err != nil {
 		t.Fatalf("failed to insert record: %v", err)
 	}
 
 	// 🔍 2. Ambil data dan cek hasilnya
 	var u User
-	if err := db.First(&u, "name = ?", "Amal").Error; err != nil {
+	if err := db.Order("id asc").First(&u, "name = ?", "Amal").Error; err != nil {
 		t.Fatalf("failed to fetch record: %v", err)
 	}
 

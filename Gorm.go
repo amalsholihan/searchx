@@ -32,6 +32,7 @@ func (ks *Searchx) GetDB() (*gorm.DB, error) {
 // SetRawQuery mengembalikan SQL dan parameter dari query GORM
 func (ks *Searchx) SetRawQuery() *Searchx {
 	db := ks.DB
+
 	stmt := db.Session(&gorm.Session{DryRun: true}).Find(nil).Statement
 	return ks.Interpolate(stmt.SQL.String(), stmt.Vars)
 }

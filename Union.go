@@ -19,7 +19,7 @@ func (ks *Searchx) ProcessUnion() *Searchx {
 
 	union := ks.Parsed
 	for _, v_union := range ks.Unions {
-		v_union.Get()
+		v_union.Calc()
 
 		sel := v_union.Parsed.(*sqlparser.Select)
 
