@@ -13,11 +13,20 @@ func (ks *Searchx) Calc() *Searchx {
 	ks.ParseSelectMapping()
 	ks.ProcessSearch()
 	ks.ProcessUnion()
+	ks.ProcessSort()
 
 	return ks
 }
 
 func (ks *Searchx) Get(result *[]map[string]any) *Searchx {
+
+	if len(ks.SelectSummaries) > 0 {
+		result_summary := map[string]any{}
+		ks = ks.GetSummary(&result_summary)
+		*result = append(*result, result_summary)
+		return ks
+	}
+
 	ks.Calc()
 	query_to_execute := ks.Raw
 	if ks.RawUnion != "" {
@@ -63,8 +72,8 @@ func (ks *Searchx) Paginate(page, per_page int, result *map[string]any) *Searchx
 		return ks
 	}
 
-	data := map[string]any{}
-	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Take(&data)
+	data := []map[string]any{}
+	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Find(&data)
 
 	result_data := *result
 	result_data["total"] = total["agg"]

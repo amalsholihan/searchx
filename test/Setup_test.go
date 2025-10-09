@@ -18,12 +18,26 @@ func (s User) TableName() string {
 	return "test_user"
 }
 
+type Staff struct {
+	ID    uint
+	Name  string
+	Age   int
+	Sales float32
+}
+
+func (s Staff) TableName() string {
+	return "test_staff"
+}
+
 func SetupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to open DB: %v", err)
 	}
 	if err := db.AutoMigrate(&User{}); err != nil {
+		t.Fatalf("failed to migrate: %v", err)
+	}
+	if err := db.AutoMigrate(&Staff{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 
@@ -34,6 +48,9 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	if err := db.Create(&User{Name: "Annissa", Age: 32, Sales: 500000}).Error; err != nil {
 		t.Fatalf("failed to insert record: %v", err)
 	}
+	if err := db.Create(&Staff{Name: "Asma", Age: 32, Sales: 20000}).Error; err != nil {
+		t.Fatalf("failed to insert record: %v", err)
+	}
 
 	// 🔍 2. Ambil data dan cek hasilnya
 	var u User
@@ -41,5 +58,5 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to fetch record: %v", err)
 	}
 
-	return db.Model(&User{})
+	return db.Session(&gorm.Session{}).Model(&User{}).Select("id, name, age, sales")
 }

@@ -20,13 +20,19 @@ func (ks *Searchx) ProcessSearch() *Searchx {
 		val := p["search_text"]
 		col := ks.ValidateColumn(p["search_column"])
 		if col == "" {
-			ks.Err = fmt.Errorf("column %v not found in select statement", p["search_column"])
+			ks.Err = fmt.Errorf("column search %v not found in select statement", p["search_column"])
 			return ks
+		}
+		if p["search_operator"] == "" {
+			p["search_operator"] = "AND"
 		}
 		op := ks.ValidateOperator(p["search_operator"])
 		if op == "" {
 			ks.Err = fmt.Errorf("operator %v not allowed", p["search_operator"])
 			return ks
+		}
+		if p["search_condition"] == "" {
+			p["search_condition"] = "="
 		}
 		cond := ks.ValidateCondition(p["search_condition"])
 		if cond == "" {

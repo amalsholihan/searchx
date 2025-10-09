@@ -37,6 +37,11 @@ func (ks *Searchx) ParseSelectMapping() *Searchx {
 		}
 	}
 
+	if len(mappings) == 0 {
+		ks.Err = fmt.Errorf("for save filtering, please don't use * on select query")
+		return ks
+	}
+
 	ks.MappingSelect = mappings
 	return ks
 }
