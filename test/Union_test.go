@@ -35,7 +35,7 @@ func TestPaginateUnion(t *testing.T) {
 		t.Fatal(search_result.Err)
 	}
 
-	if result["total"].(int64) != 3 {
+	if result["total"] != 3 {
 		t.Fatalf("total data not match 3 : %v", result["total"])
 	}
 }

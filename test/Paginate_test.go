@@ -15,7 +15,7 @@ func TestPaginate(t *testing.T) {
 		t.Fatal(search_result.Err)
 	}
 
-	if result["total"].(int64) != 2 {
+	if result["total"] != 2 {
 		t.Fatalf("total data not match 2 : %v", result["total"])
 	}
 }
