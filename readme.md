@@ -154,9 +154,9 @@ if search_result.Err != nil {
     log.Fatal(search_result.Err)
 }
 
-fmt.Println("Total:", result["total"])
-fmt.Println("Data:", result["data"])
-fmt.Println("Total Pages:", result["total_pages"])
+fmt.Println("Total:", result.Total)
+fmt.Println("Data:", result.Data)
+fmt.Println("Total Pages:", result.TotalPages)
 ```
 
 ---
