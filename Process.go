@@ -84,7 +84,7 @@ func (ks *Searchx) Paginate(page, per_page int, result *map[string]any) *Searchx
 	result_data["data"] = data
 	result_data["page"] = page
 	result_data["per_page"] = per_page
-	result_data["total_pages"] = int(math.Ceil(float64(aggFloat) / float64(per_page)))
+	result_data["total_pages"] = int(math.Ceil(ConvertToFloat(aggFloat) / ConvertToFloat(per_page)))
 
 	return ks
 }
