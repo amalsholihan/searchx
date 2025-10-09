@@ -11,11 +11,22 @@ func (ks *Searchx) ValidateColumn(column string) string {
 
 func (ks *Searchx) ValidateOperator(operator string) string {
 	allowed_operator := map[string]interface{}{
-		"and": true,
-		"or":  true,
+		"AND": true,
+		"OR":  true,
 	}
-	if _, ok := allowed_operator[strings.ToLower(operator)]; ok {
-		return strings.ToLower(operator)
+	if _, ok := allowed_operator[strings.ToUpper(operator)]; ok {
+		return strings.ToUpper(operator)
+	}
+	return ""
+}
+
+func (ks *Searchx) ValidateSortType(sortType string) string {
+	allowed_operator := map[string]interface{}{
+		"ASC":  true,
+		"DESC": true,
+	}
+	if _, ok := allowed_operator[strings.ToUpper(sortType)]; ok {
+		return strings.ToUpper(sortType)
 	}
 	return ""
 }

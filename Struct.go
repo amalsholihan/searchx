@@ -16,6 +16,7 @@ type Searchx struct {
 	Unions          []*Searchx
 	RawUnion        string
 	SearchParams    []map[string]string
+	SortParams      []map[string]string
 	SelectSummaries map[string]string
 	RawSummary      string
 	Err             error
