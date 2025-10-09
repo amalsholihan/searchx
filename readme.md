@@ -195,6 +195,11 @@ search_result := sx.Summary(map[string]string{
 
 ---
 
+## test
+```bash
+go test -v ./test
+```
+
 ## 🧠 Lisensi
 
 MIT License © 2025 [Amal Sholihan](https://github.com/amalsholihan)
