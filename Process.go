@@ -3,7 +3,6 @@ package searchx
 import (
 	"fmt"
 	"math"
-	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -73,9 +72,6 @@ func (ks *Searchx) Paginate(page, per_page int, result *Paginated) *Searchx {
 		return ks
 	}
 
-	aggStr := fmt.Sprintf("%v", total["agg"])
-	aggFloat, _ := strconv.ParseFloat(aggStr, 64)
-
 	data := []map[string]any{}
 	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Find(&data)
 
@@ -83,7 +79,7 @@ func (ks *Searchx) Paginate(page, per_page int, result *Paginated) *Searchx {
 	result.Data = data
 	result.Page = page
 	result.PerPage = per_page
-	result.TotalPages = int(math.Ceil(ConvertToFloat(aggFloat) / ConvertToFloat(per_page)))
+	result.TotalPages = int(math.Ceil(ConvertToFloat(result.Total) / ConvertToFloat(per_page)))
 
 	return ks
 }
