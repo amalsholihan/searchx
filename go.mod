@@ -1,6 +1,8 @@
 module github.com/amalsholihan/searchx
 
-go 1.25.1
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
