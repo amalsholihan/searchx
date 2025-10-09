@@ -56,7 +56,7 @@ func (ks *Searchx) GetSummary(result *map[string]any) *Searchx {
 	return ks
 }
 
-func (ks *Searchx) Paginate(page, per_page int, result *map[string]any) *Searchx {
+func (ks *Searchx) Paginate(page, per_page int, result *Paginated) *Searchx {
 	ks.Calc()
 	ks.ParseCountQuery()
 	ks.ParseCurrentPageQuery(page, per_page)
@@ -79,12 +79,11 @@ func (ks *Searchx) Paginate(page, per_page int, result *map[string]any) *Searchx
 	data := []map[string]any{}
 	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Find(&data)
 
-	result_data := *result
-	result_data["total"] = int(ConvertToFloat(total["agg"]))
-	result_data["data"] = data
-	result_data["page"] = page
-	result_data["per_page"] = per_page
-	result_data["total_pages"] = int(math.Ceil(ConvertToFloat(aggFloat) / ConvertToFloat(per_page)))
+	result.Total = ConvertToInt(total["agg"])
+	result.Data = data
+	result.Page = page
+	result.PerPage = per_page
+	result.TotalPages = int(math.Ceil(ConvertToFloat(aggFloat) / ConvertToFloat(per_page)))
 
 	return ks
 }

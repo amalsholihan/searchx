@@ -26,7 +26,7 @@ func TestGetUnion(t *testing.T) {
 
 func TestPaginateUnion(t *testing.T) {
 	db := SetupTestDB(t)
-	result := map[string]any{}
+	result := searchx.Paginated{}
 
 	q_staff := db.Session(&gorm.Session{}).Model(&Staff{}).Select("id, name, age, sales")
 	search_result := searchx.SetDB(*db).Union(*searchx.SetDB(*q_staff)).Paginate(1, 10, &result)
@@ -35,7 +35,7 @@ func TestPaginateUnion(t *testing.T) {
 		t.Fatal(search_result.Err)
 	}
 
-	if result["total"] != 3 {
-		t.Fatalf("total data not match 3 : %v", result["total"])
+	if result.Total != 3 {
+		t.Fatalf("total data not match 3 : %v", result.Total)
 	}
 }

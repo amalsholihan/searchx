@@ -21,3 +21,11 @@ type Searchx struct {
 	RawSummary      string
 	Err             error
 }
+
+type Paginated struct {
+	Data       []map[string]any
+	Total      int
+	Page       int
+	PerPage    int
+	TotalPages int
+}
