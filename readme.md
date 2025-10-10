@@ -24,7 +24,9 @@ import "github.com/amalsholihan/searchx"
 Bungkus objek `*gorm.DB` kamu menggunakan `searchx.SetDB()` agar bisa menggunakan seluruh fitur `searchx`.
 
 ```go
-db := // inisialisasi GORM DB
+// inisialisasi GORM DB
+db := DB.Model(&User{}).
+	Select(`id, name`)
 sx := searchx.SetDB(*db)
 ```
 
@@ -35,6 +37,8 @@ sx := searchx.SetDB(*db)
 Ambil semua data dari tabel aktif:
 
 ```go
+db := DB.Model(&User{}).
+	Select(`id, name`)
 var result []map[string]any
 
 sx := searchx.SetDB(*db)
@@ -61,6 +65,8 @@ SELECT * FROM `test_user`
 Gunakan `.Summary()` untuk membuat query agregasi seperti `SUM()`, `COUNT()`, `AVG()`, `MIN()`, `MAX()`.
 
 ```go
+db := DB.Model(&User{}).
+	Select(`id, name`)
 result := map[string]any{}
 
 search_result := searchx.SetDB(*db).
@@ -95,12 +101,13 @@ FROM (select * from test_user) my_table_summary
 `searchx` mendukung **UNION query** antar tabel atau model berbeda, lengkap dengan filter dan sorting setelah digabung.
 
 ```go
+dbUser := DB.Model(&User{}).
+	Select(`id, name`)
+dbStaff := db.Session(&gorm.Session{}).Model(&Staff{}).Select("id, name, age, sales")
 result := []map[string]any{}
 
-qStaff := db.Session(&gorm.Session{}).Model(&Staff{}).Select("id, name, age, sales")
-
-search_result := searchx.SetDB(*db).
-    Union(*searchx.SetDB(*qStaff)).
+search_result := searchx.SetDB(*dbUser).
+    Union(*searchx.SetDB(*dbStaff)).
     Search([]map[string]string{
         {
             "search_column":    "name",
@@ -145,6 +152,8 @@ order by name ASC, id DESC
 Gunakan `.Paginate(page, limit, &result)` untuk melakukan paginasi otomatis, lengkap dengan total count.
 
 ```go
+db := DB.Model(&User{}).
+	Select(`id, name`)
 result := searchx.Paginated{}
 
 search_result := searchx.SetDB(*db).
@@ -186,11 +195,11 @@ result := []map[string]any{}
 
 db := DB.Model(&User{}).
     Where("status = ?", "active")
-sx := searchx.SetDB(*db)
-
-search_result := sx.Summary(map[string]string{
-    "total_amount": "SUM(amount)",
-}).GetSummary(&result)
+search_result := searchx.SetDB(*db).
+    Summary(map[string]string{
+        "total_amount": "SUM(amount)",
+    }).
+    GetSummary(&result)
 ```
 
 ---
