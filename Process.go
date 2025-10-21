@@ -37,7 +37,8 @@ func (ks *Searchx) Get(result *[]map[string]any) *Searchx {
 		return ks
 	}
 
-	ks.DB.Session(&gorm.Session{}).Raw(query_to_execute).Find(result)
+	processed_query := ks.DB.Session(&gorm.Session{}).Raw(query_to_execute)
+	ks.ScanAllToMap(processed_query, result)
 
 	return ks
 }
@@ -50,7 +51,8 @@ func (ks *Searchx) GetSummary(result *map[string]any) *Searchx {
 		return ks
 	}
 
-	ks.DB.Session(&gorm.Session{}).Raw(ks.RawSummary).Take(result)
+	processed_query := ks.DB.Session(&gorm.Session{}).Raw(ks.RawSummary)
+	ks.ScanOneToMap(processed_query, result)
 
 	return ks
 }
@@ -65,7 +67,8 @@ func (ks *Searchx) Paginate(page, per_page int, result *Paginated) *Searchx {
 	}
 
 	total := map[string]any{}
-	ks.DB.Session(&gorm.Session{}).Raw(ks.RawAgg).Take(&total)
+	processed_query_agg := ks.DB.Session(&gorm.Session{}).Raw(ks.RawAgg)
+	ks.ScanOneToMap(processed_query_agg, &total)
 
 	if total["agg"] == nil {
 		ks.Err = fmt.Errorf("query count failed")
@@ -73,7 +76,8 @@ func (ks *Searchx) Paginate(page, per_page int, result *Paginated) *Searchx {
 	}
 
 	data := []map[string]any{}
-	ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage).Find(&data)
+	processed_query := ks.DB.Session(&gorm.Session{}).Raw(ks.RawCurrentPage)
+	ks.ScanAllToMap(processed_query, &data)
 
 	result.Total = ConvertToInt(total["agg"])
 	result.Data = data
