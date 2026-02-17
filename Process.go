@@ -9,10 +9,30 @@ import (
 
 func (ks *Searchx) Calc() *Searchx {
 	ks.SetRawQuery()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.Parse()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.ParseSelectMapping()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.ProcessSearch()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.ProcessUnion()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.ProcessSort()
 
 	return ks

@@ -38,6 +38,13 @@ func (ks *Searchx) SetRawQuery() *Searchx {
 }
 
 func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
+	// Convert $N placeholders to ? for compatibility
+	paramCount := 1
+	for strings.Contains(query, "$") {
+		query = strings.Replace(query, "$1", "?", 1)
+		paramCount++
+	}
+
 	for _, v := range vars {
 		var val string
 		switch t := v.(type) {
@@ -48,6 +55,16 @@ func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
 		}
 		query = strings.Replace(query, "?", val, 1)
 	}
+	// Normalize quoted identifiers for sqlparser compatibility
+	query = strings.ReplaceAll(query, "`", "")  // MySQL backticks
+	query = strings.ReplaceAll(query, "\"", "") // PostgreSQL double quotes
+	query = strings.ReplaceAll(query, "[", "")  // SQLite brackets
+	query = strings.ReplaceAll(query, "]", "")
+
+	// Convert PostgreSQL LIMIT syntax to standard: LIMIT offset, count
+	// This is only needed if the query came from GORM with PostgreSQL LIMIT format
+	// Actually keep it as-is for now since sqlparser understands both formats
+
 	ks.Raw = query
 	return ks
 }

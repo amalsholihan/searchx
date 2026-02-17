@@ -39,6 +39,12 @@ func (ks *Searchx) ParseSortQuery(orderBy string, orderDir string) *Searchx {
 	sel.OrderBy = append(sel.OrderBy, newOrder)
 
 	rawQuery := sqlparser.String(&sel)
+	// Normalize query for cross-database compatibility
+	rawQuery = strings.ReplaceAll(rawQuery, "`", "")
+	rawQuery = strings.ReplaceAll(rawQuery, "\"", "")
+	rawQuery = strings.ReplaceAll(rawQuery, "[", "")
+	rawQuery = strings.ReplaceAll(rawQuery, "]", "")
+
 	if ks.UnionParsed != nil {
 		ks.UnionParsed = &sel
 		ks.RawUnion = rawQuery

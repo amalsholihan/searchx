@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/amalsholihan/searchx"
@@ -21,7 +22,19 @@ func TestSummary(t *testing.T) {
 		t.Fatalf("raw query different : %v", search_result.Raw)
 	}
 
-	if result["total_sales"].(float64) != 600000 {
-		t.Fatalf("total sales not 600000 : %v", result["total_sales"])
+	// Check result - handle both float64 and string types from different databases
+	totalSales := result["total_sales"]
+	var sales float64
+	switch v := totalSales.(type) {
+	case float64:
+		sales = v
+	case string:
+		fmt.Sscanf(v, "%f", &sales)
+	default:
+		t.Fatalf("unexpected type: %T", v)
+	}
+
+	if sales != 600000 {
+		t.Fatalf("total sales not 600000 : %v", sales)
 	}
 }

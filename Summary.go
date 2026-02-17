@@ -23,10 +23,15 @@ func (ks *Searchx) ParseSummaryQuery() *Searchx {
 		return ks
 	}
 
+	// Jika ada error sebelumnya, return langsung
+	if ks.Err != nil {
+		return ks
+	}
+
 	// pastikan statement adalah SELECT
 	sel_pointer, ok := ks.Parsed.(*sqlparser.Select)
 	if !ok {
-		ks.Err = fmt.Errorf("not a select query 1")
+		ks.Err = fmt.Errorf("parsed statement is not SELECT, got: %T", ks.Parsed)
 		return ks
 	}
 	sel := *sel_pointer
@@ -59,6 +64,11 @@ func (ks *Searchx) ParseSummaryQuery() *Searchx {
 	select_columns := strings.Join(parts, ", ")
 
 	ks.RawSummary = fmt.Sprintf(`SELECT %v FROM (%v) my_table_summary`, select_columns, raw_query)
+	// Normalize query
+	ks.RawSummary = strings.ReplaceAll(ks.RawSummary, "`", "")
+	ks.RawSummary = strings.ReplaceAll(ks.RawSummary, "\"", "")
+	ks.RawSummary = strings.ReplaceAll(ks.RawSummary, "[", "")
+	ks.RawSummary = strings.ReplaceAll(ks.RawSummary, "]", "")
 
 	return ks
 }

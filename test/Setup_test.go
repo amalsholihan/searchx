@@ -31,6 +31,7 @@ func (s Staff) TableName() string {
 
 func SetupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+
 	if err != nil {
 		t.Fatalf("failed to open DB: %v", err)
 	}
@@ -40,6 +41,10 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(&Staff{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
+
+	// Clean existing data - use DELETE for SQLite compatibility
+	db.Exec("DELETE FROM test_user")
+	db.Exec("DELETE FROM test_staff")
 
 	// 🧪 1. Simpan data dummy
 	if err := db.Create(&User{Name: "Amal", Age: 34, Sales: 100000}).Error; err != nil {

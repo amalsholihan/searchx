@@ -104,6 +104,10 @@ func (ks *Searchx) ProcessSearch() *Searchx {
 
 	ks.DB = query
 	ks.SetRawQuery()
+	if ks.Err != nil {
+		return ks
+	}
+
 	ks.Parse()
 
 	return ks

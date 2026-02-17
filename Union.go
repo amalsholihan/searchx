@@ -17,11 +17,32 @@ func (ks *Searchx) ProcessUnion() *Searchx {
 		return ks
 	}
 
+	// Jika ada error sebelumnya, return langsung
+	if ks.Err != nil {
+		return ks
+	}
+
+	// Pastikan query utama adalah SELECT
+	if ks.Parsed == nil {
+		ks.Err = fmt.Errorf("main query is not parsed")
+		return ks
+	}
+
 	union := ks.Parsed
-	for _, v_union := range ks.Unions {
+	for i, v_union := range ks.Unions {
 		v_union.Calc()
 
-		sel := v_union.Parsed.(*sqlparser.Select)
+		// Cek error dari union calculation
+		if v_union.Err != nil {
+			ks.Err = fmt.Errorf("union %d failed: %w", i, v_union.Err)
+			return ks
+		}
+
+		sel, ok := v_union.Parsed.(*sqlparser.Select)
+		if !ok {
+			ks.Err = fmt.Errorf("union %d is not SELECT statement, got: %T", i, v_union.Parsed)
+			return ks
+		}
 
 		union = &sqlparser.Union{
 			Left:  union,
@@ -30,14 +51,21 @@ func (ks *Searchx) ProcessUnion() *Searchx {
 		}
 	}
 
-	stmt, err := sqlparser.Parse("SELECT * FROM (" + sqlparser.String(union) + ") as my_table")
+	unionQuery := "SELECT * FROM (" + sqlparser.String(union) + ") as my_table"
+	stmt, err := sqlparser.Parse(unionQuery)
 	if err != nil {
-		ks.Err = fmt.Errorf("parse error: %w  "+"SELECT * FROM ("+sqlparser.String(ks.UnionParsed)+") as my_table", err)
+		ks.Err = fmt.Errorf("parse union query failed: %w (query: %s)", err, unionQuery)
 		return ks
 	}
 
-	ks.UnionParsed = stmt.(*sqlparser.Select)
-	ks.RawUnion = sqlparser.String(stmt)
+	sel, ok := stmt.(*sqlparser.Select)
+	if !ok {
+		ks.Err = fmt.Errorf("union query result is not SELECT, got: %T", stmt)
+		return ks
+	}
+
+	ks.UnionParsed = sel
+	ks.RawUnion = ks.normalizeQuery(sqlparser.String(stmt))
 
 	return ks
 }

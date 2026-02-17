@@ -16,7 +16,7 @@ func TestGet(t *testing.T) {
 		t.Fatal(search_result.Err)
 	}
 
-	if search_result.Raw != "SELECT id, name, age, sales FROM `test_user`" {
+	if search_result.Raw != "SELECT id, name, age, sales FROM test_user" {
 		t.Fatalf("raw query different : %v", search_result.Raw)
 	}
 

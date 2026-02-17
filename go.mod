@@ -6,8 +6,8 @@ toolchain go1.24.2
 
 require (
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
-	gorm.io/driver/sqlite v1.1.4
-	gorm.io/gorm v1.25.10
+	gorm.io/driver/sqlite v1.6.0
+	gorm.io/gorm v1.30.0
 )
 
 require (

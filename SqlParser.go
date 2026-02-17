@@ -2,6 +2,7 @@ package searchx
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/xwb1989/sqlparser"
 )
@@ -9,11 +10,17 @@ import (
 func (ks *Searchx) Parse() *Searchx {
 	stmt, err := sqlparser.Parse(ks.Raw)
 	if err != nil {
-		ks.Err = fmt.Errorf("parse error: %w", err)
+		ks.Err = fmt.Errorf("parse error (query: %s): %w", ks.Raw, err)
 		return ks
 	}
 
-	ks.Parsed = stmt.(*sqlparser.Select)
+	sel, ok := stmt.(*sqlparser.Select)
+	if !ok {
+		ks.Err = fmt.Errorf("query must be SELECT statement, got: %T (query: %s)", stmt, ks.Raw)
+		return ks
+	}
+
+	ks.Parsed = sel
 	return ks
 }
 
@@ -80,7 +87,7 @@ func (ks *Searchx) ParseCountQuery() *Searchx {
 	}
 
 	raw_query := sqlparser.String(&sel)
-	ks.RawAgg = raw_query
+	ks.RawAgg = ks.normalizeQuery(raw_query)
 
 	return ks
 }
@@ -117,7 +124,70 @@ func (ks *Searchx) ParseCurrentPageQuery(page, per_page int) *Searchx {
 	}
 
 	raw_query := sqlparser.String(&sel)
+	// Normalize for database compatibility
+	raw_query = ks.normalizeQuery(raw_query)
 	ks.RawCurrentPage = raw_query
 
 	return ks
+}
+
+// normalizeQuery normalize query for cross-database compatibility
+func (ks *Searchx) normalizeQuery(query string) string {
+	// Remove backticks (MySQL), double quotes (PostgreSQL), and brackets (SQLite) for identifiers
+	query = strings.ReplaceAll(query, "`", "")
+	query = strings.ReplaceAll(query, "\"", "")
+	query = strings.ReplaceAll(query, "[", "")
+	query = strings.ReplaceAll(query, "]", "")
+	// Convert LIMIT syntax from MySQL (LIMIT offset, count) to PostgreSQL standard (LIMIT count OFFSET offset)
+	query = ks.normalizeLimitSyntax(query)
+	return query
+}
+
+// normalizeLimitSyntax converts MySQL LIMIT offset, count to LIMIT count OFFSET offset
+func (ks *Searchx) normalizeLimitSyntax(query string) string {
+	// Match "LIMIT offset, count" pattern and convert to "LIMIT count OFFSET offset"
+	upperQuery := strings.ToUpper(query)
+	if !strings.Contains(upperQuery, "LIMIT") {
+		return query
+	}
+
+	// Use regex-like approach: find "LIMIT <number>, <number>" pattern
+	// Convert with case-insensitive matching
+	limitIdx := -1
+	for i := 0; i < len(upperQuery); i++ {
+		if i+5 <= len(upperQuery) && strings.ToUpper(query[i:i+5]) == "LIMIT" {
+			limitIdx = i
+		}
+	}
+
+	if limitIdx == -1 {
+		return query
+	}
+
+	afterLimit := strings.TrimSpace(query[limitIdx+5:])
+	// Check if it has ", " pattern (MySQL style)
+	if strings.Contains(afterLimit, ",") {
+		parts := strings.Split(afterLimit, ",")
+		if len(parts) >= 2 {
+			offset := strings.TrimSpace(parts[0])
+			remaining := strings.TrimSpace(parts[1])
+			// Extract the count (first token after comma)
+			countTokens := strings.Fields(remaining)
+			if len(countTokens) > 0 {
+				count := countTokens[0]
+				// Build patterns for replacement (case-insensitive)
+				oldPattern := fmt.Sprintf("LIMIT %s, %s", offset, count)
+				oldPatternLower := fmt.Sprintf("limit %s, %s", offset, count)
+				newPattern := fmt.Sprintf("LIMIT %s OFFSET %s", count, offset)
+
+				// Try uppercase first, then lowercase
+				if strings.Contains(query, oldPattern) {
+					query = strings.Replace(query, oldPattern, newPattern, 1)
+				} else if strings.Contains(query, oldPatternLower) {
+					query = strings.Replace(query, oldPatternLower, strings.ToLower(newPattern), 1)
+				}
+			}
+		}
+	}
+	return query
 }
