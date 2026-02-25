@@ -2,6 +2,7 @@ package searchx
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm"
@@ -38,12 +39,9 @@ func (ks *Searchx) SetRawQuery() *Searchx {
 }
 
 func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
-	// Convert $N placeholders to ? for compatibility
-	paramCount := 1
-	for strings.Contains(query, "$") {
-		query = strings.Replace(query, "$1", "?", 1)
-		paramCount++
-	}
+	// Replace PostgreSQL-style placeholders ($1, $2, ...) with ?
+	re := regexp.MustCompile(`\$\d+`)
+	query = re.ReplaceAllString(query, "?")
 
 	for _, v := range vars {
 		var val string
