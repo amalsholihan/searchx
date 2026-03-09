@@ -12,15 +12,21 @@ func TestSortWithJSON(t *testing.T) {
 	db := SetupTestDB(t)
 	result := []map[string]any{}
 
-	// Test sort with JSON
-	jsonStr := `{
-		"sort": [
-			{ "field": "name", "direction": "asc" },
-			{ "field": "id", "direction": "desc" }
-		]
-	}`
+	// Test sort with map[string]interface{}
+	sortParams := map[string]interface{}{
+		"sort": []interface{}{
+			map[string]interface{}{
+				"field":     "name",
+				"direction": "asc",
+			},
+			map[string]interface{}{
+				"field":     "id",
+				"direction": "desc",
+			},
+		},
+	}
 
-	search_result := searchx.SetDB(*db).SortWithJSON(jsonStr).Get(&result)
+	search_result := searchx.SetDB(*db).Sort(sortParams).Get(&result)
 
 	if search_result.Err != nil {
 		t.Fatal(search_result.Err)
@@ -45,14 +51,17 @@ func TestSortWithJSONSingle(t *testing.T) {
 	db := SetupTestDB(t)
 	result := []map[string]any{}
 
-	// Test single sort with JSON
-	jsonStr := `{
-		"sort": [
-			{ "field": "age", "direction": "desc" }
-		]
-	}`
+	// Test single sort with map[string]interface{}
+	sortParams := map[string]interface{}{
+		"sort": []interface{}{
+			map[string]interface{}{
+				"field":     "age",
+				"direction": "desc",
+			},
+		},
+	}
 
-	search_result := searchx.SetDB(*db).SortWithJSON(jsonStr).Get(&result)
+	search_result := searchx.SetDB(*db).Sort(sortParams).Get(&result)
 
 	if search_result.Err != nil {
 		t.Fatal(search_result.Err)
