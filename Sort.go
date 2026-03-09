@@ -26,6 +26,23 @@ func (ks *Searchx) Sort(params []map[string]any) *Searchx {
 	return ks
 }
 
+// convertInterfaceSliceToMapSlice converts []interface{} to []map[string]any
+func (ks *Searchx) convertInterfaceSliceToMapSlice(items []interface{}) []map[string]any {
+	result := []map[string]any{}
+	for _, item := range items {
+		if m, ok := item.(map[string]interface{}); ok {
+			converted := map[string]any{}
+			for k, v := range m {
+				converted[k] = v
+			}
+			result = append(result, converted)
+		} else if m, ok := item.(map[string]any); ok {
+			result = append(result, m)
+		}
+	}
+	return result
+}
+
 // convertSortParamsRecursively converts all []interface{} to []map[string]any recursively
 func (ks *Searchx) convertSortParamsRecursively(params []map[string]any) []map[string]any {
 	result := []map[string]any{}

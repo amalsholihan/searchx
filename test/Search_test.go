@@ -37,15 +37,17 @@ func TestSearchWithJSON(t *testing.T) {
 	result := []map[string]any{}
 
 	// Test simple AND condition
-	jsonStr := `{
-		"search": {
-			"and": [
-				{ "field": "name", "operator": "=", "value": "Annissa" }
-			]
-		}
-	}`
+	searchParams := map[string]interface{}{
+		"and": []interface{}{
+			map[string]interface{}{
+				"field":    "name",
+				"operator": "=",
+				"value":    "Annissa",
+			},
+		},
+	}
 
-	search_result := searchx.SetDB(*db).SearchWithJSON(jsonStr).Get(&result)
+	search_result := searchx.SetDB(*db).Search(searchParams).Get(&result)
 
 	if search_result.Err != nil {
 		t.Fatal(search_result.Err)
@@ -65,24 +67,36 @@ func TestSearchWithJSONNestedOR(t *testing.T) {
 	result := []map[string]any{}
 
 	// Test nested OR condition
-	jsonStr := `{
-		"search": {
-			"and": [
-				{ "field": "age", "operator": ">=", "value": "32" },
-				{
-					"or": [
-						{ "field": "name", "operator": "like", "value": "Amal" },
-						{ "field": "name", "operator": "like", "value": "Annissa" }
-					]
-				}
-			],
-			"and": [
-				{ "field": "sales", "operator": ">", "value": "1000" }
-			]
-		}
-	}`
+	searchParams := map[string]interface{}{
+		"and": []interface{}{
+			map[string]interface{}{
+				"field":    "age",
+				"operator": ">=",
+				"value":    "32",
+			},
+			map[string]interface{}{
+				"or": []interface{}{
+					map[string]interface{}{
+						"field":    "name",
+						"operator": "like",
+						"value":    "Amal",
+					},
+					map[string]interface{}{
+						"field":    "name",
+						"operator": "like",
+						"value":    "Annissa",
+					},
+				},
+			},
+			map[string]interface{}{
+				"field":    "sales",
+				"operator": ">",
+				"value":    "1000",
+			},
+		},
+	}
 
-	search_result := searchx.SetDB(*db).SearchWithJSON(jsonStr).Get(&result)
+	search_result := searchx.SetDB(*db).Search(searchParams).Get(&result)
 
 	fmt.Printf("%s", search_result.Raw)
 	if search_result.Err != nil {
@@ -109,16 +123,22 @@ func TestSearchWithJSONMultipleOR(t *testing.T) {
 	result := []map[string]any{}
 
 	// Test multiple OR conditions
-	jsonStr := `{
-		"search": {
-			"or": [
-				{ "field": "name", "operator": "=", "value": "Amal" },
-				{ "field": "name", "operator": "=", "value": "Annissa" }
-			]
-		}
-	}`
+	searchParams := map[string]interface{}{
+		"or": []interface{}{
+			map[string]interface{}{
+				"field":    "name",
+				"operator": "=",
+				"value":    "Amal",
+			},
+			map[string]interface{}{
+				"field":    "name",
+				"operator": "=",
+				"value":    "Annissa",
+			},
+		},
+	}
 
-	search_result := searchx.SetDB(*db).SearchWithJSON(jsonStr).Get(&result)
+	search_result := searchx.SetDB(*db).Search(searchParams).Get(&result)
 
 	if search_result.Err != nil {
 		t.Fatal(search_result.Err)

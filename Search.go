@@ -1,170 +1,86 @@
 package searchx
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
 
-// SearchCondition represents a single search condition
-type SearchCondition struct {
-	Field    string      `json:"field"`
-	Operator string      `json:"operator"`
-	Value    interface{} `json:"value"`
-}
-
-// SearchGroup represents a group of search conditions with AND/OR logic
-type SearchGroup struct {
-	AND []SearchGroupItem `json:"and,omitempty"`
-	OR  []SearchGroupItem `json:"or,omitempty"`
-}
-
-// SearchGroupItem can be either a SearchCondition or a nested SearchGroup
-type SearchGroupItem struct {
-	Condition *SearchCondition `json:"-"` // Don't use JSON tag, handle manually
-	Group     *SearchGroup     `json:"-"` // Don't use JSON tag, handle manually
-}
-
-// SearchRequest represents the complete search request
-type SearchRequest struct {
-	Search SearchGroup `json:"search"`
-}
-
-// UnmarshalJSON for SearchGroupItem to handle both condition and group
-func (s *SearchGroupItem) UnmarshalJSON(data []byte) error {
-	// Try to unmarshal as SearchCondition first
-	var cond SearchCondition
-	if err := json.Unmarshal(data, &cond); err == nil && cond.Field != "" {
-		s.Condition = &cond
-		return nil
+func (ks *Searchx) Search(params interface{}) *Searchx {
+	// Support both map[string]interface{} and []map[string]any
+	switch v := params.(type) {
+	case map[string]interface{}:
+		// Convert map[string]interface{} to []map[string]any format
+		convertedParams := ks.convertSearchMapToParams(v)
+		ks.SearchParams = convertedParams
+	case []map[string]any:
+		// Use []map[string]any directly
+		ks.SearchParams = v
+	default:
+		ks.Err = fmt.Errorf("invalid search params type: %T", params)
 	}
-
-	// Try to unmarshal as SearchGroup (with "and" or "or" key)
-	var group SearchGroup
-	if err := json.Unmarshal(data, &group); err == nil {
-		s.Group = &group
-		return nil
-	}
-
-	return fmt.Errorf("invalid search group item")
-}
-
-func (ks *Searchx) Search(params []map[string]any) *Searchx {
-	// Convert all []interface{} to []map[string]any recursively
-	convertedParams := ks.convertParamsRecursively(params)
-	ks.SearchParams = convertedParams
 	return ks
 }
 
-// convertParamsRecursively converts all []interface{} to []map[string]any recursively
-func (ks *Searchx) convertParamsRecursively(params []map[string]any) []map[string]any {
-	result := []map[string]any{}
-	for _, p := range params {
-		converted := map[string]any{}
-		for k, v := range p {
-			switch k {
-			case "search", "and", "or":
-				if items, ok := v.([]map[string]any); ok {
-					converted[k] = ks.convertParamsRecursively(items)
-				} else if items, ok := v.([]interface{}); ok {
-					converted[k] = ks.convertInterfaceSliceToMapSlice(items)
-				} else {
-					converted[k] = v
-				}
-			default:
-				converted[k] = v
-			}
-		}
-		result = append(result, converted)
-	}
-	return result
-}
-
-// SearchWithJSON accepts JSON string with nested AND/OR logic
-// Example: {"search": {"and": [{"field": "status", "operator": "=", "value": "active"}]}}
-func (ks *Searchx) SearchWithJSON(jsonStr string) *Searchx {
-	var req SearchRequest
-	if err := json.Unmarshal([]byte(jsonStr), &req); err != nil {
-		ks.Err = fmt.Errorf("failed to parse search JSON: %v", err)
-		return ks
-	}
-
-	// Convert JSON structure to SearchParams format
-	params := ks.convertSearchGroupToParams(&req.Search)
-	ks.SearchParams = params
-	return ks
-}
-
-// convertInterfaceSliceToMapSlice converts []interface{} to []map[string]any
-func (ks *Searchx) convertInterfaceSliceToMapSlice(items []interface{}) []map[string]any {
-	result := []map[string]any{}
-	for _, item := range items {
-		if m, ok := item.(map[string]interface{}); ok {
-			converted := map[string]any{}
-			for k, v := range m {
-				converted[k] = v
-			}
-			result = append(result, converted)
-		} else if m, ok := item.(map[string]any); ok {
-			result = append(result, m)
-		}
-	}
-	return result
-}
-
-// convertSearchGroupToParams recursively converts SearchGroup to nested []map[string]any structure
-func (ks *Searchx) convertSearchGroupToParams(group *SearchGroup) []map[string]any {
-	if group == nil {
-		return []map[string]any{}
-	}
-
-	// Return the nested structure directly
+// convertSearchMapToParams converts map[string]interface{} to []map[string]any format
+func (ks *Searchx) convertSearchMapToParams(params map[string]interface{}) []map[string]any {
 	result := []map[string]any{}
 
 	// Process AND conditions
-	if len(group.AND) > 0 {
-		andItems := []map[string]any{}
-		for _, item := range group.AND {
-			if item.Condition != nil {
-				andItems = append(andItems, map[string]any{
-					"search_column":    item.Condition.Field,
-					"search_condition": item.Condition.Operator,
-					"search_text":      fmt.Sprintf("%v", item.Condition.Value),
-					"search_operator":  "AND",
-				})
-			} else if item.Group != nil {
-				// Recursively process nested group
-				nestedParams := ks.convertSearchGroupToParams(item.Group)
-				andItems = append(andItems, nestedParams...)
+	if andItems, ok := params["and"].([]interface{}); ok {
+		andParams := []map[string]any{}
+		for _, item := range andItems {
+			if m, ok := item.(map[string]interface{}); ok {
+				// Check if this is a nested group
+				if _, hasAnd := m["and"]; hasAnd {
+					nestedParams := ks.convertSearchMapToParams(m)
+					andParams = append(andParams, nestedParams...)
+				} else if _, hasOr := m["or"]; hasOr {
+					nestedParams := ks.convertSearchMapToParams(m)
+					andParams = append(andParams, nestedParams...)
+				} else {
+					// This is a flat condition
+					andParams = append(andParams, map[string]any{
+						"search_column":    m["field"],
+						"search_condition": m["operator"],
+						"search_text":      fmt.Sprintf("%v", m["value"]),
+						"search_operator":  "AND",
+					})
+				}
 			}
 		}
-		if len(andItems) > 0 {
+		if len(andParams) > 0 {
 			result = append(result, map[string]any{
-				"and": andItems,
+				"and": andParams,
 			})
 		}
 	}
 
 	// Process OR conditions
-	if len(group.OR) > 0 {
-		orItems := []map[string]any{}
-		for _, item := range group.OR {
-			if item.Condition != nil {
-				orItems = append(orItems, map[string]any{
-					"search_column":    item.Condition.Field,
-					"search_condition": item.Condition.Operator,
-					"search_text":      fmt.Sprintf("%v", item.Condition.Value),
-					"search_operator":  "OR",
-				})
-			} else if item.Group != nil {
-				// Recursively process nested group
-				nestedParams := ks.convertSearchGroupToParams(item.Group)
-				orItems = append(orItems, nestedParams...)
+	if orItems, ok := params["or"].([]interface{}); ok {
+		orParams := []map[string]any{}
+		for _, item := range orItems {
+			if m, ok := item.(map[string]interface{}); ok {
+				// Check if this is a nested group
+				if _, hasAnd := m["and"]; hasAnd {
+					nestedParams := ks.convertSearchMapToParams(m)
+					orParams = append(orParams, nestedParams...)
+				} else if _, hasOr := m["or"]; hasOr {
+					nestedParams := ks.convertSearchMapToParams(m)
+					orParams = append(orParams, nestedParams...)
+				} else {
+					// This is a flat condition
+					orParams = append(orParams, map[string]any{
+						"search_column":    m["field"],
+						"search_condition": m["operator"],
+						"search_text":      fmt.Sprintf("%v", m["value"]),
+						"search_operator":  "OR",
+					})
+				}
 			}
 		}
-		if len(orItems) > 0 {
+		if len(orParams) > 0 {
 			result = append(result, map[string]any{
-				"or": orItems,
+				"or": orParams,
 			})
 		}
 	}
@@ -191,7 +107,7 @@ func (ks *Searchx) ProcessSearch() *Searchx {
 
 	if len(ks.Unions) > 0 {
 		for _, v := range ks.Unions {
-			v.Search(params)
+			v.Search(ks.SearchParams)
 		}
 	}
 
