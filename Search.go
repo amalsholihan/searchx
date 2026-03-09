@@ -17,29 +17,12 @@ func (ks *Searchx) Search(params interface{}) *Searchx {
 		ks.SearchParams = v
 	case []interface{}:
 		// Convert []interface{} to []map[string]any format
-		convertedParams := ks.convertInterfaceSliceToMapSlice(v)
+		convertedParams := ConvertInterfaceSliceToMapSlice(v)
 		ks.SearchParams = convertedParams
 	default:
 		ks.Err = fmt.Errorf("invalid search params type: %T", params)
 	}
 	return ks
-}
-
-// convertSearchMapToParams converts map[string]interface{} to []map[string]any format
-func (ks *Searchx) convertInterfaceSliceToMapSlice(items []interface{}) []map[string]any {
-	result := []map[string]any{}
-	for _, item := range items {
-		if m, ok := item.(map[string]interface{}); ok {
-			converted := map[string]any{}
-			for k, v := range m {
-				converted[k] = v
-			}
-			result = append(result, converted)
-		} else if m, ok := item.(map[string]any); ok {
-			result = append(result, m)
-		}
-	}
-	return result
 }
 
 func (ks *Searchx) convertSearchMapToParams(params map[string]interface{}) []map[string]any {

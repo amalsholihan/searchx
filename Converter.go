@@ -63,3 +63,19 @@ func ConvertToFloat(data interface{}) float64 {
 		return data.(float64)
 	}
 }
+
+func ConvertInterfaceSliceToMapSlice(items []interface{}) []map[string]any {
+	result := []map[string]any{}
+	for _, item := range items {
+		if m, ok := item.(map[string]interface{}); ok {
+			converted := map[string]any{}
+			for k, v := range m {
+				converted[k] = v
+			}
+			result = append(result, converted)
+		} else if m, ok := item.(map[string]any); ok {
+			result = append(result, m)
+		}
+	}
+	return result
+}

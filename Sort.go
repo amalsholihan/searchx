@@ -19,7 +19,7 @@ func (ks *Searchx) Sort(params interface{}) *Searchx {
 		ks.SortParams = v
 	case []interface{}:
 		// Convert []interface{} to []map[string]any format
-		convertedParams := ks.convertInterfaceSliceToMapSlice(v)
+		convertedParams := ConvertInterfaceSliceToMapSlice(v)
 		ks.SortParams = convertedParams
 	default:
 		ks.Err = fmt.Errorf("invalid sort params type: %T", params)
