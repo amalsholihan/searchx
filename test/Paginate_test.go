@@ -11,6 +11,7 @@ func TestPaginate(t *testing.T) {
 	result := searchx.Paginated{}
 
 	search_result := searchx.SetDB(*db).
+		Search([]map[string]any{}).
 		Paginate(1, 10, &result)
 
 	if search_result.Err != nil {

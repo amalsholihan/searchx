@@ -56,6 +56,10 @@ func (ks *Searchx) ParseSelectMapping() *Searchx {
 // ParseCountQuery mengubah SELECT query menjadi SELECT count(*) AS agg ...
 func (ks *Searchx) ParseCountQuery() *Searchx {
 
+	if ks.Err != nil {
+		return ks
+	}
+
 	// pastikan statement adalah SELECT
 	sel_pointer, ok := ks.Parsed.(*sqlparser.Select)
 	if !ok {
@@ -94,6 +98,10 @@ func (ks *Searchx) ParseCountQuery() *Searchx {
 
 // ParseCurrentPageQuery membuat query utk page skarang
 func (ks *Searchx) ParseCurrentPageQuery(page, per_page int) *Searchx {
+
+	if ks.Err != nil {
+		return ks
+	}
 
 	// pastikan statement adalah SELECT
 	sel_pointer, ok := ks.Parsed.(*sqlparser.Select)
