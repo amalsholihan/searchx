@@ -4,20 +4,23 @@ import (
 	"testing"
 
 	"github.com/amalsholihan/searchx"
+	"gorm.io/gorm"
 )
 
-func TestPaginate(t *testing.T) {
+func TestPaginateUnion(t *testing.T) {
 	db := SetupTestDB(t)
 	result := searchx.Paginated{}
 
+	q_staff := db.Session(&gorm.Session{}).Model(&Staff{}).Select("id, name, age, sales")
 	search_result := searchx.SetDB(*db).
+		Union(*searchx.SetDB(*q_staff)).
 		Paginate(1, 10, &result)
 
 	if search_result.Err != nil {
 		t.Fatal(search_result.Err)
 	}
 
-	if len(result.Data) != 2 {
-		t.Fatalf("data length not 2 : %v", len(result.Data))
+	if len(result.Data) != 3 {
+		t.Fatalf("data length not 3 : %v", len(result.Data))
 	}
 }

@@ -34,7 +34,9 @@ func (ks *Searchx) ValidateSortType(sortType string) string {
 func (ks *Searchx) ValidateCondition(condition string) string {
 	allowed_condition := map[string]interface{}{
 		"=":           true,
+		">":           true,
 		">=":          true,
+		"<":           true,
 		"<=":          true,
 		"!=":          true,
 		"like":        true,

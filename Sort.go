@@ -1,15 +1,56 @@
 package searchx
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/xwb1989/sqlparser"
 )
 
-func (ks *Searchx) Sort(params []map[string]string) *Searchx {
+// SortCondition represents a single sort condition
+type SortCondition struct {
+	Field     string `json:"field"`
+	Direction string `json:"direction"`
+}
+
+// SortRequest represents the complete sort request
+type SortRequest struct {
+	Sort []SortCondition `json:"sort"`
+}
+
+func (ks *Searchx) Sort(params []map[string]any) *Searchx {
 	ks.SortParams = params
 	return ks
+}
+
+// SortWithJSON accepts JSON string with sort conditions
+// Example: {"sort": [{"field": "name", "direction": "asc"}, {"field": "id", "direction": "desc"}]}
+func (ks *Searchx) SortWithJSON(jsonStr string) *Searchx {
+	var req SortRequest
+	if err := json.Unmarshal([]byte(jsonStr), &req); err != nil {
+		ks.Err = fmt.Errorf("failed to parse sort JSON: %v", err)
+		return ks
+	}
+
+	// Convert JSON structure to SortParams format
+	params := ks.convertSortConditionsToParams(req.Sort)
+	ks.SortParams = params
+	return ks
+}
+
+// convertSortConditionsToParams converts []SortCondition to []map[string]any
+func (ks *Searchx) convertSortConditionsToParams(conditions []SortCondition) []map[string]any {
+	var params []map[string]any
+
+	for _, cond := range conditions {
+		params = append(params, map[string]any{
+			"sort_column": cond.Field,
+			"sort_type":   cond.Direction,
+		})
+	}
+
+	return params
 }
 
 // untuk membuat query sort
@@ -61,27 +102,40 @@ func (ks *Searchx) ProcessSort() *Searchx {
 		return ks
 	}
 
-	for _, sort_param := range ks.SortParams {
-		if sort_param["sort_column"] == "" {
-			ks.Err = fmt.Errorf("sort column is required")
-			return ks
+	ks.processNestedSortParams(ks.SortParams)
+
+	return ks
+}
+
+// processNestedSortParams recursively processes nested sort params
+func (ks *Searchx) processNestedSortParams(params []map[string]any) {
+	for _, sort_param := range params {
+		// Check if this is a nested group with "sort" key
+		if sortItems, ok := sort_param["sort"].([]map[string]any); ok {
+			// Recursively process nested sort params
+			ks.processNestedSortParams(sortItems)
+			continue
 		}
-		sortColumn := ks.ValidateColumn(sort_param["sort_column"])
+
+		// Process flat sort condition
+		if sort_param["sort_column"] == "" || sort_param["sort_column"] == nil {
+			ks.Err = fmt.Errorf("sort column is required")
+			return
+		}
+		sortColumn := ks.ValidateColumn(fmt.Sprintf("%v", sort_param["sort_column"]))
 		if sortColumn == "" {
 			ks.Err = fmt.Errorf("column sort %v not found in select statement", sort_param["sort_column"])
-			return ks
+			return
 		}
-		if sort_param["sort_type"] == "" {
+		if sort_param["sort_type"] == "" || sort_param["sort_type"] == nil {
 			ks.Err = fmt.Errorf("sort type is required")
-			return ks
+			return
 		}
-		sortType := ks.ValidateSortType(sort_param["sort_type"])
+		sortType := ks.ValidateSortType(fmt.Sprintf("%v", sort_param["sort_type"]))
 		if sortType == "" {
 			ks.Err = fmt.Errorf("sort type %v is invalid", sort_param["sort_type"])
-			return ks
+			return
 		}
 		ks.ParseSortQuery(sortColumn, sortType)
 	}
-
-	return ks
 }
