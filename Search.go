@@ -50,8 +50,34 @@ func (s *SearchGroupItem) UnmarshalJSON(data []byte) error {
 }
 
 func (ks *Searchx) Search(params []map[string]any) *Searchx {
-	ks.SearchParams = params
+	// Convert all []interface{} to []map[string]any recursively
+	convertedParams := ks.convertParamsRecursively(params)
+	ks.SearchParams = convertedParams
 	return ks
+}
+
+// convertParamsRecursively converts all []interface{} to []map[string]any recursively
+func (ks *Searchx) convertParamsRecursively(params []map[string]any) []map[string]any {
+	result := []map[string]any{}
+	for _, p := range params {
+		converted := map[string]any{}
+		for k, v := range p {
+			switch k {
+			case "search", "and", "or":
+				if items, ok := v.([]map[string]any); ok {
+					converted[k] = ks.convertParamsRecursively(items)
+				} else if items, ok := v.([]interface{}); ok {
+					converted[k] = ks.convertInterfaceSliceToMapSlice(items)
+				} else {
+					converted[k] = v
+				}
+			default:
+				converted[k] = v
+			}
+		}
+		result = append(result, converted)
+	}
+	return result
 }
 
 // SearchWithJSON accepts JSON string with nested AND/OR logic
@@ -67,6 +93,23 @@ func (ks *Searchx) SearchWithJSON(jsonStr string) *Searchx {
 	params := ks.convertSearchGroupToParams(&req.Search)
 	ks.SearchParams = params
 	return ks
+}
+
+// convertInterfaceSliceToMapSlice converts []interface{} to []map[string]any
+func (ks *Searchx) convertInterfaceSliceToMapSlice(items []interface{}) []map[string]any {
+	result := []map[string]any{}
+	for _, item := range items {
+		if m, ok := item.(map[string]interface{}); ok {
+			converted := map[string]any{}
+			for k, v := range m {
+				converted[k] = v
+			}
+			result = append(result, converted)
+		} else if m, ok := item.(map[string]any); ok {
+			result = append(result, m)
+		}
+	}
+	return result
 }
 
 // convertSearchGroupToParams recursively converts SearchGroup to nested []map[string]any structure

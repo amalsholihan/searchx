@@ -20,8 +20,33 @@ type SortRequest struct {
 }
 
 func (ks *Searchx) Sort(params []map[string]any) *Searchx {
-	ks.SortParams = params
+	// Convert all []interface{} to []map[string]any recursively
+	convertedParams := ks.convertSortParamsRecursively(params)
+	ks.SortParams = convertedParams
 	return ks
+}
+
+// convertSortParamsRecursively converts all []interface{} to []map[string]any recursively
+func (ks *Searchx) convertSortParamsRecursively(params []map[string]any) []map[string]any {
+	result := []map[string]any{}
+	for _, p := range params {
+		converted := map[string]any{}
+		for k, v := range p {
+			if k == "sort" {
+				if items, ok := v.([]map[string]any); ok {
+					converted[k] = ks.convertSortParamsRecursively(items)
+				} else if items, ok := v.([]interface{}); ok {
+					converted[k] = ks.convertInterfaceSliceToMapSlice(items)
+				} else {
+					converted[k] = v
+				}
+			} else {
+				converted[k] = v
+			}
+		}
+		result = append(result, converted)
+	}
+	return result
 }
 
 // SortWithJSON accepts JSON string with sort conditions
