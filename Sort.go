@@ -123,25 +123,46 @@ func (ks *Searchx) processNestedSortParams(params []map[string]any) {
 			continue
 		}
 
-		// Process flat sort condition
-		if sort_param["sort_column"] == "" || sort_param["sort_column"] == nil {
-			ks.Err = fmt.Errorf("sort column is required")
-			return
+		// Support both old format (sort_column, sort_type) and new format (field, direction)
+		var sortColumn, sortType string
+
+		// Try new format first (field, direction)
+		if sort_param["field"] != nil && sort_param["field"] != "" {
+			sortColumn = fmt.Sprintf("%v", sort_param["field"])
+		} else if sort_param["sort_column"] != nil && sort_param["sort_column"] != "" {
+			// Fall back to old format (sort_column)
+			sortColumn = fmt.Sprintf("%v", sort_param["sort_column"])
 		}
-		sortColumn := ks.ValidateColumn(fmt.Sprintf("%v", sort_param["sort_column"]))
+
+		if sort_param["direction"] != nil && sort_param["direction"] != "" {
+			sortType = fmt.Sprintf("%v", sort_param["direction"])
+		} else if sort_param["sort_type"] != nil && sort_param["sort_type"] != "" {
+			// Fall back to old format (sort_type)
+			sortType = fmt.Sprintf("%v", sort_param["sort_type"])
+		}
+
+		// Validate sort column
 		if sortColumn == "" {
-			ks.Err = fmt.Errorf("column sort %v not found in select statement", sort_param["sort_column"])
+			ks.Err = fmt.Errorf("sort column is required (field or sort_column)")
 			return
 		}
-		if sort_param["sort_type"] == "" || sort_param["sort_type"] == nil {
-			ks.Err = fmt.Errorf("sort type is required")
+		validatedColumn := ks.ValidateColumn(sortColumn)
+		if validatedColumn == "" {
+			ks.Err = fmt.Errorf("column sort %v not found in select statement", sortColumn)
 			return
 		}
-		sortType := ks.ValidateSortType(fmt.Sprintf("%v", sort_param["sort_type"]))
+
+		// Validate sort type
 		if sortType == "" {
-			ks.Err = fmt.Errorf("sort type %v is invalid", sort_param["sort_type"])
+			ks.Err = fmt.Errorf("sort type is required (direction or sort_type)")
 			return
 		}
-		ks.ParseSortQuery(sortColumn, sortType)
+		validatedType := ks.ValidateSortType(sortType)
+		if validatedType == "" {
+			ks.Err = fmt.Errorf("sort type %v is invalid", sortType)
+			return
+		}
+
+		ks.ParseSortQuery(validatedColumn, validatedType)
 	}
 }
