@@ -228,7 +228,11 @@ func (ks *Searchx) processNestedParams(params []map[string]any, depth int) (stri
 			q = fmt.Sprintf("%s %s ?", col, cond)
 			args = append(args, val)
 		case "like":
-			q = fmt.Sprintf("%s LIKE ?", col)
+			if ks.isPostgres() {
+				q = fmt.Sprintf("%s ILIKE ?", col)
+			} else {
+				q = fmt.Sprintf("%s LIKE ?", col)
+			}
 			args = append(args, "%"+val+"%")
 		case "is null":
 			q = fmt.Sprintf("%s IS NULL", col)
