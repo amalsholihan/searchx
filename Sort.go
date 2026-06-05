@@ -61,6 +61,9 @@ func (ks *Searchx) convertSortMapToParams(params map[string]interface{}) []map[s
 
 // untuk membuat query sort
 func (ks *Searchx) ParseSortQuery(orderBy string, orderDir string) *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParseSortQuery(orderBy, orderDir)
+	}
 	// pastikan statement adalah SELECT
 	selPointer, ok := ks.Parsed.(*sqlparser.Select)
 	if !ok {

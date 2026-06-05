@@ -7,6 +7,7 @@ import (
 
 type Searchx struct {
 	DB              *gorm.DB
+	Dialect         string // "mysql", "postgres", "sqlite" — auto-detected from gorm.DB
 	Parsed          sqlparser.SelectStatement
 	UnionParsed     sqlparser.SelectStatement
 	MappingSelect   map[string]string

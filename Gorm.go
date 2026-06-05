@@ -11,7 +11,8 @@ import (
 // SetDB simpan *gorm.DB ke context
 func SetDB(db gorm.DB) *Searchx {
 	ks := Searchx{
-		DB: &db,
+		DB:      &db,
+		Dialect: db.Dialector.Name(),
 	}
 	return &ks
 }
@@ -19,7 +20,12 @@ func SetDB(db gorm.DB) *Searchx {
 // SetDB simpan *gorm.DB ke context
 func (ks *Searchx) SetDB(db gorm.DB) *Searchx {
 	ks.DB = &db
+	ks.Dialect = db.Dialector.Name()
 	return ks
+}
+
+func (ks *Searchx) isPostgres() bool {
+	return ks.Dialect == "postgres"
 }
 
 // GetDB ambil *gorm.DB dari context

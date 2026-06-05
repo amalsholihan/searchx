@@ -8,6 +8,9 @@ import (
 )
 
 func (ks *Searchx) Parse() *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParse()
+	}
 	stmt, err := sqlparser.Parse(ks.Raw)
 	if err != nil {
 		ks.Err = fmt.Errorf("parse error (query: %s): %w", ks.Raw, err)
@@ -26,6 +29,9 @@ func (ks *Searchx) Parse() *Searchx {
 
 // ParseSelectMapping mengubah SELECT query jadi mapping alias -> expression
 func (ks *Searchx) ParseSelectMapping() *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParseSelectMapping()
+	}
 	sel, ok := ks.Parsed.(*sqlparser.Select)
 	if !ok {
 		ks.Err = fmt.Errorf("not a select query")
@@ -55,6 +61,9 @@ func (ks *Searchx) ParseSelectMapping() *Searchx {
 
 // ParseCountQuery mengubah SELECT query menjadi SELECT count(*) AS agg ...
 func (ks *Searchx) ParseCountQuery() *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParseCountQuery()
+	}
 
 	if ks.Err != nil {
 		return ks
@@ -98,6 +107,9 @@ func (ks *Searchx) ParseCountQuery() *Searchx {
 
 // ParseCurrentPageQuery membuat query utk page skarang
 func (ks *Searchx) ParseCurrentPageQuery(page, per_page int) *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParseCurrentPageQuery(page, per_page)
+	}
 
 	if ks.Err != nil {
 		return ks

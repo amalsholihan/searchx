@@ -12,6 +12,9 @@ func (ks *Searchx) Union(uks Searchx) *Searchx {
 }
 
 func (ks *Searchx) ProcessUnion() *Searchx {
+	if ks.isPostgres() {
+		return ks.pgProcessUnion()
+	}
 
 	if len(ks.Unions) == 0 {
 		return ks

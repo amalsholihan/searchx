@@ -17,6 +17,9 @@ func (ks *Searchx) Summary(select_summary map[string]string) *Searchx {
 }
 
 func (ks *Searchx) ParseSummaryQuery() *Searchx {
+	if ks.isPostgres() {
+		return ks.pgParseSummaryQuery()
+	}
 
 	if len(ks.SelectSummaries) == 0 {
 		ks.Err = fmt.Errorf("no select summary defined")
