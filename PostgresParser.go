@@ -65,12 +65,31 @@ func (ks *Searchx) pgParseSortQuery(orderBy, orderDir string) *Searchx {
 	}
 
 	clause := fmt.Sprintf("%s %s", orderBy, strings.ToUpper(orderDir))
-	if strings.Contains(strings.ToUpper(*target), " ORDER BY ") {
+	if hasTopLevelOrderBy(*target) {
 		*target += ", " + clause
 	} else {
 		*target += " ORDER BY " + clause
 	}
 	return ks
+}
+
+// hasTopLevelOrderBy detects ORDER BY at paren depth 0, so ORDER BY inside
+// subqueries or aggregate functions (e.g. string_agg(..., ', ' ORDER BY col))
+// does not trigger a false positive.
+func hasTopLevelOrderBy(sql string) bool {
+	upper := strings.ToUpper(sql)
+	depth := 0
+	for i := 0; i < len(upper); i++ {
+		ch := upper[i]
+		if ch == '(' {
+			depth++
+		} else if ch == ')' {
+			depth--
+		} else if depth == 0 && i+9 <= len(upper) && upper[i:i+9] == " ORDER BY" {
+			return true
+		}
+	}
+	return false
 }
 
 // pgParseCountQuery wraps raw SQL in a COUNT subquery
