@@ -41,7 +41,7 @@ func (ks *Searchx) pgParseSelectMapping() *Searchx {
 		asIdx := strings.Index(upperCol, " AS ")
 		if asIdx != -1 {
 			expr := strings.TrimSpace(col[:asIdx])
-			alias := strings.TrimSpace(col[asIdx+4:])
+			alias := strings.Trim(strings.TrimSpace(col[asIdx+4:]), "\"")
 			mappings[alias] = expr
 		} else {
 			mappings[col] = col

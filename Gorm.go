@@ -59,11 +59,14 @@ func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
 		}
 		query = strings.Replace(query, "?", val, 1)
 	}
-	// Normalize quoted identifiers for sqlparser compatibility
-	query = strings.ReplaceAll(query, "`", "")  // MySQL backticks
-	query = strings.ReplaceAll(query, "\"", "") // PostgreSQL double quotes
-	query = strings.ReplaceAll(query, "[", "")  // SQLite brackets
-	query = strings.ReplaceAll(query, "]", "")
+	// Normalize quoted identifiers for sqlparser compatibility (MySQL/SQLite only).
+	// PostgreSQL uses double-quotes to preserve identifier case — must not strip them.
+	query = strings.ReplaceAll(query, "`", "") // MySQL backticks
+	if !ks.isPostgres() {
+		query = strings.ReplaceAll(query, "\"", "") // strip for sqlparser (MySQL/SQLite)
+		query = strings.ReplaceAll(query, "[", "")  // SQLite brackets
+		query = strings.ReplaceAll(query, "]", "")
+	}
 
 	// Convert PostgreSQL LIMIT syntax to standard: LIMIT offset, count
 	// This is only needed if the query came from GORM with PostgreSQL LIMIT format
