@@ -3,10 +3,17 @@ package searchx
 import "strings"
 
 func (ks *Searchx) ValidateColumn(column string) string {
-	if val, ok := ks.MappingSelect[column]; ok {
-		return val
+	val, ok := ks.MappingSelect[column]
+	if !ok {
+		return ""
 	}
-	return ""
+	if ks.RawUnion != "" {
+		// pgProcessUnion sudah wrap kedua sisi jadi "SELECT * FROM (...) AS my_table"
+		// sebelum ProcessSort jalan — di titik ini cuma alias output yang keliatan,
+		// bukan ekspresi/tabel aslinya (lihat PostgresParser.go pgProcessUnion).
+		return column
+	}
+	return val
 }
 
 func (ks *Searchx) ValidateOperator(operator string) string {
