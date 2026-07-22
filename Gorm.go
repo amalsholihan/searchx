@@ -53,7 +53,7 @@ func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
 		var val string
 		switch t := v.(type) {
 		case string:
-			val = fmt.Sprintf("'%s'", t)
+			val = fmt.Sprintf("'%s'", ks.escapeSQLString(t))
 		default:
 			val = fmt.Sprintf("%v", t)
 		}
@@ -74,4 +74,19 @@ func (ks *Searchx) Interpolate(query string, vars []interface{}) *Searchx {
 
 	ks.Raw = query
 	return ks
+}
+
+// escapeSQLString escapes a Go string for safe inline use as an SQL string literal.
+// Interpolate() manually inlines bound values into the final raw SQL text (needed to wrap
+// it in derived count/pagination queries) instead of using driver-level bound parameters,
+// so this escaping is the only thing standing between user input (e.g. a search_text
+// containing an apostrophe, like "A'mal") and a broken query or SQL injection. Doubling `'`
+// is the standard-SQL escape (works on both Postgres and MySQL); MySQL additionally treats
+// backslash as an escape character in string literals (Postgres does not, in standard-
+// conforming strings), so backslashes are doubled first, MySQL-only, before quote-escaping.
+func (ks *Searchx) escapeSQLString(s string) string {
+	if !ks.isPostgres() {
+		s = strings.ReplaceAll(s, `\`, `\\`)
+	}
+	return strings.ReplaceAll(s, "'", "''")
 }
