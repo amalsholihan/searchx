@@ -38,7 +38,11 @@ func (ks *Searchx) pgParseSelectMapping() *Searchx {
 		}
 		upperCol := strings.ToUpper(col)
 
-		asIdx := strings.Index(upperCol, " AS ")
+		// LastIndex, bukan Index: alias selalu di UJUNG expression, tapi expression-nya
+		// sendiri bisa mengandung " AS " di tengah (mis. CAST(col AS TEXT)) — pakai
+		// kemunculan pertama bikin alias ke-parse jadi sisa teks setelah "AS" pertama
+		// itu (rusak), bukan alias asli setelah "AS" terakhir.
+		asIdx := strings.LastIndex(upperCol, " AS ")
 		if asIdx != -1 {
 			expr := strings.TrimSpace(col[:asIdx])
 			alias := strings.Trim(strings.TrimSpace(col[asIdx+4:]), "\"")
